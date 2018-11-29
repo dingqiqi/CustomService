@@ -41,8 +41,12 @@ uploadArchives {
             pom.artifactId = POM_ARTIFACT_ID
             pom.groupId = GROUP
 
-            repository(url: getRepositoryUrl()) {
-                authentication(userName: NAME, password: PASSWORD) // maven授权信息
+            def uploadUrl = project.hasProperty('url') ? url : getRepositoryUrl()
+            def uploadName = project.hasProperty('username') ? username : NAME
+            def uploadPsw = project.hasProperty('password') ? password : PASSWORD
+
+            repository(url: uploadUrl) {
+                authentication(userName: uploadName, password: uploadPsw) // maven授权信息
             }
         }
     }

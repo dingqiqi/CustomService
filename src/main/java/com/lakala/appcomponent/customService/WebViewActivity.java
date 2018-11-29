@@ -1,4 +1,4 @@
-package com.lakala.cloudpos.cusservicelib;
+package com.lakala.appcomponent.customService;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -24,6 +24,8 @@ import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import com.lakala.cloudpos.customService.R;
+
 public class WebViewActivity extends Activity {
 
     //5.0之后回调
@@ -42,10 +44,6 @@ public class WebViewActivity extends Activity {
 
     private TextView mTvProgressTitle;
 
-    private ImageView mIvBack;
-    private TextView mTvTitle;
-    private RelativeLayout mRlBg;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -54,13 +52,47 @@ public class WebViewActivity extends Activity {
         initView();
     }
 
-    @SuppressLint("SetJavaScriptEnabled")
+    @SuppressLint({"SetJavaScriptEnabled", "AddJavascriptInterface"})
     private void initView() {
         mWebView = findViewById(R.id.webView);
 
-        mTvTitle = findViewById(R.id.tvTitle);
-        mIvBack = findViewById(R.id.ivBack);
-        mRlBg = findViewById(R.id.rlBg);
+        TextView mTvTitle = findViewById(R.id.tvTitle);
+        ImageView mIvBack = findViewById(R.id.ivBack);
+        RelativeLayout mRlBg = findViewById(R.id.rlBg);
+
+        ServiceManager.Builder mBuilder = getIntent().getParcelableExtra("data");
+
+        if (mBuilder != null) {
+            if (mBuilder.toolBarVisible != View.GONE) {
+                mRlBg.setVisibility(View.VISIBLE);
+
+                if (!TextUtils.isEmpty(mBuilder.title)) {
+                    mTvTitle.setText(mBuilder.title);
+                }
+
+                if (mBuilder.titleColor != 0) {
+                    mTvTitle.setTextColor(mBuilder.titleColor);
+                }
+
+                if (mBuilder.titleSize != 0) {
+                    mTvTitle.setTextSize(mBuilder.titleSize);
+                }
+
+                if (mBuilder.toolBarColor != 0) {
+                    mRlBg.setBackgroundColor(mBuilder.toolBarColor);
+                }
+
+                if (mBuilder.icon != 0) {
+                    mIvBack.setImageResource(mBuilder.icon);
+                }
+
+                if (mBuilder.toolBarColor != 0) {
+                    mRlBg.setBackgroundColor(mBuilder.toolBarColor);
+                }
+            } else {
+                mRlBg.setVisibility(View.GONE);
+            }
+        }
 
         final WebSettings webSettings = mWebView.getSettings();
 
@@ -238,39 +270,26 @@ public class WebViewActivity extends Activity {
     }
 
     /**
-     * 后退按钮view
-     *
-     * @return view
-     */
-    public ImageView getBackView() {
-        return mIvBack;
-    }
-
-    /**
-     * 标题view
-     *
-     * @return view
-     */
-    public TextView getTitleView() {
-        return mTvTitle;
-    }
-
-    /**
-     * 标题栏view
-     *
-     * @return view
-     */
-    public RelativeLayout getToolBarView() {
-        return mRlBg;
-    }
-
-    /**
      * 后退事件
      *
      * @param v view
      */
     public void onBack(View v) {
         onBackPressed();
+    }
+
+    @Override
+    protected void onPause() {
+        mWebView.onPause();
+        mWebView.pauseTimers();
+        super.onPause();
+    }
+
+    @Override
+    protected void onResume() {
+        mWebView.onResume();
+        mWebView.resumeTimers();
+        super.onResume();
     }
 
     @Override
@@ -284,8 +303,14 @@ public class WebViewActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        if (mWebView != null) {
+            mWebView.loadDataWithBaseURL(null, "", "text/html", "utf-8", null);
+            mWebView.clearHistory();
+            ((ViewGroup) mWebView.getParent()).removeView(mWebView);
+            mWebView.destroy();
+            mWebView = null;
+        }
         super.onDestroy();
-        //webView会内存泄漏 单独开的进程 所以杀死进程
         System.exit(0);
     }
 }
